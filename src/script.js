@@ -1,4 +1,4 @@
-const OriginalMember = ['竹橋','乘木','大場','能勢','近藤','中脇'];
+const OriginalMember = ['A','B','C','D','E','F'];
 let remainingMembers = [...OriginalMember];
 
 // ローカルストレージからデータをロード

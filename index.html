@@ -6,12 +6,19 @@
         <link rel="stylesheet" href="dist.css">
         <title>ランダム指定</title>
     </head>
-    <body>
-        <h1 class="text-6xl text-blue-50">ランダム指名</h1>
-        <input type="button" value="ここをクリック" id="button"></input>
-        <div id="studyMember"></div>
-        <button id="finalizeButton">決定</button>
-        <button id="resetButton">リセット</button>
-        <script src="js/script.js"></script>
-    </body>
+    <body class="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center space-y-6 px-4">
+        <h1 class="text-5xl font-bold text-blue-200">ランダム指名</h1>
+        <input type="button" value="ここをクリック" id="button" class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg shadow transition duration-300 cursor-pointer"/>
+        <div id="studyMember" class="min-h-[50px] text-xl text-center bg-gray-800 px-6 py-4 rounded w-full max-w-md">
+        </div>
+        <div class="flex space-x-4">
+          <button id="finalizeButton" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg shadow">
+            決定
+          </button>
+          <button id="resetButton" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow">
+            リセット
+          </button>
+        </div>  
+        <script src="src/script.js"></script>
+      </body>
 </html>
