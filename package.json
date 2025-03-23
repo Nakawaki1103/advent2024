@@ -1,0 +1,20 @@
+{
+  "name": "advent2",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "postcss styles.css -o dist.css"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@tailwindcss/postcss": "^4.0.15",
+    "postcss-cli": "^11.0.1"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "tailwindcss": "^3.4.1"
+  }
+}
