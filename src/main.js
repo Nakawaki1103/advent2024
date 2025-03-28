@@ -147,7 +147,6 @@ function selectRandomMember() {
 
   isAnimating = true;
 
-  // 操作UIを非表示
   document.getElementById('candidateList').style.display = 'none';
   document.getElementById('newMemberInput').style.display = 'none';
   document.getElementById('addMemberBtn').style.display = 'none';
@@ -159,16 +158,14 @@ function selectRandomMember() {
   const egg = eggContainer.querySelector('svg');
   eggContainer.style.zIndex = "1000";
 
-  // ランダム選出
   const randomIndex = Math.floor(Math.random() * remainingMembers.length);
   const selectedMember = remainingMembers[randomIndex];
 
-  // 卵の現在の位置
   const eggRect = eggContainer.getBoundingClientRect();
   const dx = window.innerWidth / 2 - (eggRect.left + eggRect.width / 2);
   const dy = window.innerHeight / 2 - (eggRect.top + eggRect.height / 2);
 
-  const isAlreadyCentered = Math.abs(dx) < 5 && Math.abs(dy) < 5;
+  const isAlreadyCentered = Math.abs(dx) < 2 && Math.abs(dy) < 2;
 
   const startAnimation = () => {
     gsap.set(egg, { rotation: 0, scale: 1, opacity: 1 });
@@ -182,11 +179,10 @@ function selectRandomMember() {
     });
   };
 
+  // ✅ 卵がほぼ中央にいる場合、移動せず即抽選
   if (isAlreadyCentered) {
-    // すでに中央なら移動せずアニメ開始！
     startAnimation();
   } else {
-    // 中央に移動してからアニメ
     gsap.to(eggContainer, {
       duration: 0.5,
       x: dx,
@@ -194,6 +190,14 @@ function selectRandomMember() {
       ease: "power2.out",
       onComplete: startAnimation
     });
+
+    // ✅ 念のため、タイムアウトでも保険をかける（onComplete漏れ対策）
+    setTimeout(() => {
+      if (isAnimating) {
+        console.warn('onComplete failed, fallback triggered');
+        startAnimation();
+      }
+    }, 800); // 0.5s + α
   }
 }
 
