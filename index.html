@@ -1,26 +1,92 @@
+<?php
+?>
 <!DOCTYPE html>
 <html lang="ja">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="dist.css">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-
-        <title>ランダム指定</title>
-    </head>
-    <body class="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center space-y-6 px-4">
-        <h1 class="text-5xl font-bold text-blue-200">ランダム指名</h1>
-        <input type="button" value="ここをクリック" id="button" class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg shadow transition duration-300 cursor-pointer"/>
-        <div id="studyMember" class="min-h-[50px] text-xl text-center bg-gray-800 px-6 py-4 rounded w-full max-w-md">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <link rel="stylesheet" href="dist.css" />
+    <link rel="icon" href="images/egg.png" type="image/png" />
+    <title>egg capsule!!</title>
+  </head>
+  <body class="min-h-screen text-white bg-gradient-to-br from-slate-900 via-blue-900 to-teal-800 p-6 md:p-20 relative">
+    <h1 class="text-4xl md:text-5xl font-bold text-blue-200 text-center pt-10 md:pt-20">
+      Let’s crack the egg!
+    </h1>
+    <div class="flex flex-col md:flex-row justify-center p-4 md:p-10 gap-10">
+      <!-- 操作エリア（候補リスト・入力・ボタン） → モバイルでは下（order-2）、デスクトップでは左（order-1） -->
+      <div class="flex flex-col items-center gap-4 w-full md:w-auto order-2 md:order-1">
+        <div id="candidateList" class="mt-4 p-4 bg-gray-100 rounded-lg shadow-md text-black w-full sm:w-64">
+          <!-- 候補項目は JS で追加 -->
         </div>
-        <div class="flex space-x-4">
-          <button id="finalizeButton" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg shadow">
-            決定
-          </button>
-          <button id="resetButton" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow">
-            リセット
-          </button>
-        </div>  
-        <script type="module" src="src/script.js"></script>
-      </body>
+        <input type="text" id="newMemberInput" placeholder="候補を入力" class="py-2 px-4 rounded-lg text-black w-full sm:w-64" />
+        <button id="addMemberBtn" class="px-4 py-2 bg-blue-500 hover:bg-blue-800 text-white rounded-lg shadow w-full sm:w-64">
+          候補を追加
+        </button>
+        <button id="resetMemberListBtn" class="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg shadow w-full sm:w-64">
+          候補をリセット
+        </button>
+      </div>
+      <!-- アニメーションエリア（卵・結果表示・紙吹雪） → モバイルでは上（order-1）、デスクトップでは右（order-2） -->
+      <div class="animation-area relative flex flex-col items-center w-full md:w-auto order-1 md:order-2">
+        <div id="eggContainer" class="egg-container">
+          <svg width="200" height="300" viewBox="0 0 200 300">
+            <defs>
+              <!-- 卵のベース色のグラデーション -->
+              <radialGradient id="eggGradient" cx="50%" cy="35%" r="65%">
+                <stop offset="0%" stop-color="#fff7da" />
+                <stop offset="100%" stop-color="#f2c98d" />
+              </radialGradient>
+              <!-- ハイライト用のグラデーション -->
+              <radialGradient id="eggHighlight" cx="40%" cy="20%" r="30%">
+                <stop offset="0%" stop-color="rgba(255,255,255,0.5)" />
+                <stop offset="100%" stop-color="rgba(255,255,255,0)" />
+              </radialGradient>
+            </defs>
+        
+            <!-- 卵の本体 -->
+            <path
+              d="
+                M100,20
+                C160,20 190,110 190,170
+                C190,240 150,280 100,280
+                C50,280 10,240 10,170
+                C10,110 40,20 100,20
+                Z
+              "
+              fill="url(#eggGradient)"
+            />
+        
+            <!-- ハイライト（上下反転） -->
+            <ellipse
+              cx="90"
+              cy="220"
+              rx="40"
+              ry="25"
+              fill="url(#eggHighlight)"
+              transform="rotate(-15, 90, 220)"
+            />
+        
+            <!-- 卵の影（上下反転で上側に配置） -->
+            <ellipse
+              cx="100"
+              cy="290"
+              rx="35"
+              ry="10"
+              fill="rgba(0,0,0,0.15)"
+            />
+          </svg>
+        </div>
+        <div id="selectedPerson" class="selected-person mt-6 w-full sm:w-64 h-12 bg-indigo-950 rounded-lg flex items-center justify-center text-lg"></div>
+        <button id="restartBtn" class="hidden flex items-center mt-4 justify-center bg-blue-400 hover:bg-blue-500 text-white rounded-full shadow w-24 h-24">
+          Retry!
+        </button> 
+        <div id="confetti" class="confetti-container absolute inset-0 pointer-events-none"></div>
+      </div>
+    </div>
+    <script type="module" src="src/main.js"></script>
+  </body>
 </html>
+
