@@ -57,7 +57,7 @@ export function createConfetti() {
       ease: "power1.inOut"
     })
     .call(() => {
-      egg.style.display = 'none';
+      egg.parentElement.classList.add('hidden'); // svgの親（eggContainer）を非表示に
       gsap.set(egg, { opacity: 1, scale: 1 });
     })
     .call(() => {
