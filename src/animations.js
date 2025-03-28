@@ -33,9 +33,9 @@ export function createConfetti() {
     }
   }
   
-  export function animateEggSelection(egg, displayElement, selectedMember) {
+  export function animateEggSelection(egg, selectedMember, onDisplay) {
     const tl = gsap.timeline();
-    
+  
     tl.to(egg, {
       rotation: 5,
       duration: 0.1,
@@ -54,20 +54,16 @@ export function createConfetti() {
       scale: 1.5,
       duration: 0.3,
       delay: 0.1,
-      ease: "power1.inOut",
-      onComplete: () => {
-        egg.classList.add("hidden");
-        gsap.set(egg, { opacity: 1, scale: 1 });
-      }
+      ease: "power1.inOut"
     })
-    // 0.3秒前に候補表示と紙吹雪生成を同時に実行
     .call(() => {
-      displayElement.innerHTML = `${selectedMember} it is!`;
-      gsap.fromTo(displayElement, 
-        { y: 60, scale: 0.2, opacity: 0 }, 
-        { y: 0, scale: 1, opacity: 1, duration: 0.6, ease: "back.out(1.7)" }
-      );
+      egg.style.display = 'none';
+      gsap.set(egg, { opacity: 1, scale: 1 });
+    })
+    .call(() => {
+      onDisplay(); // ← ここで外から渡された表示処理を実行！
       createConfetti();
+      setTimeout(() => createConfetti(), 400); // 二段紙吹雪
     }, null, "-=0.3");
   }
   

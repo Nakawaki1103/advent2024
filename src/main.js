@@ -61,64 +61,82 @@ document.getElementById("addMemberBtn").addEventListener("click", () => {
   }
 });
 
+// egg の中に表示エリアがないので、毎回新しく作る（卵の上に絶対配置）
+function showSelectedMember(name) {
+  const existing = document.getElementById('selectedMemberOverlay');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'selectedMemberOverlay';
+  overlay.innerHTML = ` ${name} it is！ `;
+  overlay.style.position = 'absolute';
+  overlay.style.top = '50%';
+  overlay.style.left = '50%';
+  overlay.style.transform = 'translate(-50%, -50%)';
+  overlay.style.fontSize = '2.5rem';
+  overlay.style.color = '#FFD700';
+  overlay.style.fontWeight = 'bold';
+  overlay.style.textAlign = 'center';
+  overlay.style.textShadow = '0 0 20px rgba(255,255,255,0.9)';
+  overlay.style.zIndex = '2000';
+  overlay.style.pointerEvents = 'none';
+
+  document.querySelector('.animation-area').appendChild(overlay);
+
+  gsap.fromTo(overlay, 
+    { y: 80, scale: 0.3, rotation: -20, opacity: 0 }, 
+    { y: 0, scale: 1.5, rotation: 0, opacity: 1, duration: 1, ease: "elastic.out(1, 0.5)" }
+  );
+}
+
 // ----------------------------------------
 // 卵クリック：中央移動 → 割れるアニメーション
 // ----------------------------------------
 let isAnimating = false;
 function selectRandomMember() {
+  if (isAnimating) return;
   if (remainingMembers.length === 0) {
-    alert("メンバーがいません！");
+    alert("候補がいないです！");
     return;
   }
 
   isAnimating = true;
-  
-  // 非表示にする（操作エリア）
+
+  // UIを非表示にする
   document.getElementById('candidateList').style.display = 'none';
   document.getElementById('newMemberInput').style.display = 'none';
   document.getElementById('addMemberBtn').style.display = 'none';
   document.getElementById('resetMemberListBtn').style.display = 'none';
-  // Retry ボタンは表示
-  document.getElementById('restartBtn').classList.remove('hidden');
-  
-  const egg = document.getElementById('eggContainer');
 
-  egg.style.zIndex = "1000";
-  // 以前の transform をクリア
-  gsap.set(egg, { clearProps: 'all' });
-  
+  const eggContainer = document.getElementById('eggContainer');
+  const egg = document.querySelector('#eggContainer svg'); // ← SVGを直接アニメ対象に！
+  eggContainer.style.zIndex = "1000";
+
+  gsap.set(eggContainer, { clearProps: 'all' });
+
   const randomIndex = Math.floor(Math.random() * remainingMembers.length);
   const selectedMember = remainingMembers[randomIndex];
-  const displayElement = document.getElementById('selectedPerson');
-  displayElement.innerHTML = "";
-  
-  // 卵の現在の中央座標取得
-  const eggRect = egg.getBoundingClientRect();
-  const eggCenterX = eggRect.left + eggRect.width / 2;
-  const eggCenterY = eggRect.top + eggRect.height / 2;
-  const viewportCenterX = window.innerWidth / 2;
-  const viewportCenterY = window.innerHeight / 2;
-  const dx = viewportCenterX - eggCenterX;
-  const dy = viewportCenterY - eggCenterY;
-  
-  // 卵を中央に移動
-  gsap.to(egg, {
+
+  const eggRect = eggContainer.getBoundingClientRect();
+  const dx = window.innerWidth / 2 - (eggRect.left + eggRect.width / 2);
+  const dy = window.innerHeight / 2 - (eggRect.top + eggRect.height / 2);
+
+  gsap.to(eggContainer, {
     duration: 0.5,
     x: dx,
     y: dy,
     ease: "power2.out",
-    onComplete: function() {
+    onComplete: function () {
       gsap.set(egg, { rotation: 0, scale: 1, opacity: 1 });
-      // 卵が割れるアニメーション開始
-      animateEggSelection(egg, displayElement, selectedMember);
-      // animateEggSelection 内で紙吹雪などが実行された後、完了処理で isAnimating を false に戻す
-      // ここでの完了処理は、animateEggSelection の onComplete 内で行うか、
-      // この関数内で一定の遅延後にフラグをリセットするなどの方法が考えられます。
-      
-      // 例: 1.5秒後にアニメーション完了と仮定してフラグをリセット
-      setTimeout(() => {
-        isAnimating = false;
-      }, 1500);
+
+      animateEggSelection(egg, selectedMember, () => {
+        showSelectedMember(selectedMember);
+        document.getElementById('restartBtn').classList.remove('hidden');
+
+        setTimeout(() => {
+          isAnimating = false;
+        }, 1500);
+      });
     }
   });
 }
@@ -130,14 +148,10 @@ document.getElementById('eggContainer').addEventListener('click', selectRandomMe
 // ----------------------------------------
 function resetMemberList() {
   remainingMembers = [...initialMembers];
-  const displayElement = document.getElementById('selectedPerson');
-  displayElement.innerHTML = 'メンバーリストがリセットされました！';
+  
   const egg = document.getElementById('eggContainer');
   animateResetEgg(egg);
-  gsap.fromTo(displayElement, 
-    { y: 20, opacity: 0 }, 
-    { y: 0, opacity: 1, duration: 0.5, ease: "power2.out" }
-  );
+
   updateCandidateList();
 }
 
@@ -147,8 +161,8 @@ document.getElementById('resetMemberListBtn').addEventListener('click', resetMem
 // Retry（やり直し）イベント：卵と操作エリアの復元
 // ----------------------------------------
 function restartAnimation() {
-  const displayElement = document.getElementById('selectedPerson');
-  displayElement.innerHTML = "";
+  const existing = document.getElementById('selectedMemberOverlay');
+  if (existing) existing.remove();
   const egg = document.getElementById('eggContainer');
   
   gsap.to(egg, {
