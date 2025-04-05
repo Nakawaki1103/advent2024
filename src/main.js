@@ -107,30 +107,47 @@ document.getElementById('startSelectionBtn').addEventListener('click', () => {
 });
 
 // egg の中に表示エリアがないので、毎回新しく作る（卵の上に絶対配置）
-function showSelectedMember(name) {
+function showSelectedMember(text, isFake = false) {
   const existing = document.getElementById('selectedMemberOverlay');
   if (existing) existing.remove();
 
   const overlay = document.createElement('div');
   overlay.id = 'selectedMemberOverlay';
-  overlay.innerHTML = ` ${name} it is！ `;
-  overlay.style.position = 'fixed'; //  fixedに変更で画面中央に！
+  overlay.innerText = text;
+  overlay.style.position = 'fixed';
   overlay.style.top = '50%';
   overlay.style.left = '50%';
   overlay.style.transform = 'translate(-50%, -50%)';
-  overlay.style.fontSize = '3.5rem'; //  さらにデカく
+  overlay.style.fontSize = 'clamp(1.5rem, 6vw, 4rem)'; // 📱スマホ〜PCまで最適
   overlay.style.color = '#FFD700';
   overlay.style.fontWeight = 'bold';
   overlay.style.textAlign = 'center';
   overlay.style.textShadow = '0 0 20px rgba(255,255,255,0.9)';
   overlay.style.zIndex = '3000';
   overlay.style.pointerEvents = 'none';
+  overlay.style.maxWidth = '90vw';
+  overlay.style.width = 'auto';
+  overlay.style.padding = '0 1rem'; // ← 余白つけて見やすく
+  overlay.style.wordBreak = 'break-word'; // ← 改行許可
+  overlay.style.lineHeight = '1.2';
 
   document.body.appendChild(overlay);
 
-  gsap.fromTo(overlay, 
-    { y: 80, scale: 0.3, rotation: -20, opacity: 0 }, 
-    { y: 0, scale: 1.5, rotation: 0, opacity: 1, duration: 1, ease: "elastic.out(1, 0.5)" }
+  gsap.fromTo(overlay,
+    {
+      scale: 0.5,
+      rotation: -30,
+      opacity: 0,
+      filter: 'blur(10px)',
+    },
+    {
+      scale: 1.5,
+      rotation: 0,
+      opacity: 1,
+      filter: 'blur(0px)',
+      duration: 1.2,
+      ease: 'expo.out',
+    }
   );
 }
 
@@ -146,7 +163,9 @@ function selectRandomMember() {
   }
 
   isAnimating = true;
+  let animationStarted = false; // 追加: アニメーション開始済みフラグ
 
+  // UI の非表示
   document.getElementById('candidateList').style.display = 'none';
   document.getElementById('newMemberInput').style.display = 'none';
   document.getElementById('addMemberBtn').style.display = 'none';
@@ -168,18 +187,20 @@ function selectRandomMember() {
   const isAlreadyCentered = Math.abs(dx) < 2 && Math.abs(dy) < 2;
 
   const startAnimation = () => {
+    if (animationStarted) return; // すでに開始済みなら何もしない
+    animationStarted = true;
     gsap.set(egg, { rotation: 0, scale: 1, opacity: 1 });
 
-    animateEggSelection(egg, selectedMember, () => {
-      showSelectedMember(selectedMember);
+    animateEggSelection(egg, selectedMember, remainingMembers, (name, isFake) => {
+      showSelectedMember(name, isFake);
       document.getElementById('restartBtn').classList.remove('hidden');
       setTimeout(() => {
         isAnimating = false;
+        animationStarted = false; // 次回のためにフラグをリセット
       }, 1500);
     });
   };
 
-  // ✅ 卵がほぼ中央にいる場合、移動せず即抽選
   if (isAlreadyCentered) {
     startAnimation();
   } else {
@@ -191,13 +212,13 @@ function selectRandomMember() {
       onComplete: startAnimation
     });
 
-    // ✅ 念のため、タイムアウトでも保険をかける（onComplete漏れ対策）
+    // fallback タイマーもフラグで重複防止
     setTimeout(() => {
-      if (isAnimating) {
+      if (!animationStarted) {
         console.warn('onComplete failed, fallback triggered');
         startAnimation();
       }
-    }, 800); // 0.5s + α
+    }, 800);
   }
 }
 
