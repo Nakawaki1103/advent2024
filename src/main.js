@@ -1,21 +1,34 @@
 import { animateEggSelection, animateResetEgg, setupEggHoverAnimation } from './animations.js';
 
+// ---------------------------
+// 状態管理
+// ---------------------------
 const initialMembers = ['A', 'B', 'C'];
 let remainingMembers = [...initialMembers];
 
-// 卵エリアのホバーアニメーションを設定
+// ---------------------------
+// DOM要素のキャッシュ
+// ---------------------------
 const eggContainer = document.getElementById('eggContainer');
+const candidateListEl = document.getElementById('candidateList');
+const startSelectionBtn = document.getElementById('startSelectionBtn');
+const addMemberBtn = document.getElementById('addMemberBtn');
+const newMemberInput = document.getElementById('newMemberInput');
+const resetMemberListBtn = document.getElementById('resetMemberListBtn');
+const mainHeading = document.getElementById('mainHeading');
+const restartBtn = document.getElementById('restartBtn');
+
+// ---------------------------
+// 初期設定：卵エリアのホバーアニメーション設定
+// ---------------------------
 setupEggHoverAnimation(eggContainer);
 
-// ----------------------------------------
-// 候補リスト更新・削除処理
-// ----------------------------------------
+// ---------------------------
+// 候補リストの更新＆削除処理
+// ---------------------------
 function updateCandidateList() {
-  const candidateListElement = document.getElementById('candidateList');
-  const startBtn = document.getElementById('startSelectionBtn');
-  if (!candidateListElement) return;
-
-  candidateListElement.innerHTML = "";
+  if (!candidateListEl) return;
+  candidateListEl.innerHTML = "";
 
   remainingMembers.forEach((member, index) => {
     const candidateItem = document.createElement("div");
@@ -26,6 +39,7 @@ function updateCandidateList() {
     candidateItem.style.marginBottom = "4px";
     candidateItem.innerHTML = `<span>🐤 ${member}</span>`;
 
+    // 削除ボタンの設定
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "削除";
     deleteBtn.style.backgroundColor = "#FF6B6B";
@@ -34,19 +48,18 @@ function updateCandidateList() {
     deleteBtn.style.padding = "2px 6px";
     deleteBtn.style.borderRadius = "4px";
     deleteBtn.style.cursor = "pointer";
-    deleteBtn.addEventListener("click", () => {
-      removeCandidate(index);
-    });
+    deleteBtn.addEventListener("click", () => removeCandidate(index));
 
     candidateItem.appendChild(deleteBtn);
-    candidateListElement.appendChild(candidateItem);
+    candidateListEl.appendChild(candidateItem);
   });
 
-  // ✅ 候補が0なら「卵を割る」ボタンを無効化
-  if (startBtn) {
-    startBtn.disabled = remainingMembers.length === 0;
-    startBtn.classList.toggle('opacity-50', remainingMembers.length === 0);
-    startBtn.classList.toggle('cursor-not-allowed', remainingMembers.length === 0);
+  // 候補が0の場合は「卵を割る」ボタンを無効化
+  if (startSelectionBtn) {
+    const disable = remainingMembers.length === 0;
+    startSelectionBtn.disabled = disable;
+    startSelectionBtn.classList.toggle('opacity-50', disable);
+    startSelectionBtn.classList.toggle('cursor-not-allowed', disable);
   }
 }
 
@@ -55,30 +68,32 @@ function removeCandidate(index) {
   updateCandidateList();
 }
 
-// ----------------------------------------
-// 候補追加イベント
-// ----------------------------------------
-document.getElementById("addMemberBtn").addEventListener("click", () => {
-  const input = document.getElementById("newMemberInput");
-  const name = input.value.trim();
+// ---------------------------
+// イベント：候補追加
+// ---------------------------
+addMemberBtn.addEventListener("click", () => {
+  const name = newMemberInput.value.trim();
   if (name) {
     remainingMembers.push(name);
-    input.value = "";
+    newMemberInput.value = "";
     updateCandidateList();
   } else {
     alert("候補を入力してください");
   }
 });
-document.getElementById('startSelectionBtn').addEventListener('click', () => {
+
+// ---------------------------
+// イベント：抽選開始（卵を割る）
+// ---------------------------
+startSelectionBtn.addEventListener('click', () => {
   if (remainingMembers.length === 0) {
     alert('候補がありません！');
     return;
   }
 
-  const eggContainer = document.getElementById('eggContainer');
   eggContainer.classList.remove('hidden');
 
-  // 🐤 吸い込み演出（DOMは非表示にするだけ）
+  // 候補リストの各アイテムを吸い込む演出
   const chickElements = document.querySelectorAll('#candidateList .candidate-item');
   chickElements.forEach((chick, index) => {
     const rect = chick.getBoundingClientRect();
@@ -94,22 +109,20 @@ document.getElementById('startSelectionBtn').addEventListener('click', () => {
       duration: 0.6,
       delay: index * 0.1,
       ease: "power1.in",
-      onComplete: () => {
-        chick.style.display = 'none'; // ← remove じゃなくて非表示！
-      }
+      onComplete: () => chick.style.display = 'none'
     });
   });
 
-  // 少し遅れて卵を中央へ
-  setTimeout(() => {
-    selectRandomMember();
-  }, remainingMembers.length * 100 + 500);
+  // 候補数に応じた遅延後に抽選開始
+  setTimeout(selectRandomMember, remainingMembers.length * 100 + 500);
 });
 
-// egg の中に表示エリアがないので、毎回新しく作る（卵の上に絶対配置）
+// ---------------------------
+// 表示：選ばれた候補の名前オーバーレイ
+// ---------------------------
 function showSelectedMember(text, isFake = false) {
-  const existing = document.getElementById('selectedMemberOverlay');
-  if (existing) existing.remove();
+  const existingOverlay = document.getElementById('selectedMemberOverlay');
+  if (existingOverlay) existingOverlay.remove();
 
   const overlay = document.createElement('div');
   overlay.id = 'selectedMemberOverlay';
@@ -118,7 +131,7 @@ function showSelectedMember(text, isFake = false) {
   overlay.style.top = '50%';
   overlay.style.left = '50%';
   overlay.style.transform = 'translate(-50%, -50%)';
-  overlay.style.fontSize = 'clamp(1.5rem, 6vw, 4rem)'; // 📱スマホ〜PCまで最適
+  overlay.style.fontSize = 'clamp(1.5rem, 6vw, 4rem)'; // スマホ〜PC対応
   overlay.style.color = '#FFD700';
   overlay.style.fontWeight = 'bold';
   overlay.style.textAlign = 'center';
@@ -127,33 +140,21 @@ function showSelectedMember(text, isFake = false) {
   overlay.style.pointerEvents = 'none';
   overlay.style.maxWidth = '90vw';
   overlay.style.width = 'auto';
-  overlay.style.padding = '0 1rem'; // ← 余白つけて見やすく
-  overlay.style.wordBreak = 'break-word'; // ← 改行許可
+  overlay.style.padding = '0 1rem';
+  overlay.style.wordBreak = 'break-word';
   overlay.style.lineHeight = '1.2';
 
   document.body.appendChild(overlay);
 
   gsap.fromTo(overlay,
-    {
-      scale: 0.5,
-      rotation: -30,
-      opacity: 0,
-      filter: 'blur(10px)',
-    },
-    {
-      scale: 1.5,
-      rotation: 0,
-      opacity: 1,
-      filter: 'blur(0px)',
-      duration: 1.2,
-      ease: 'expo.out',
-    }
+    { scale: 0.5, rotation: -30, opacity: 0, filter: 'blur(10px)' },
+    { scale: 1.5, rotation: 0, opacity: 1, filter: 'blur(0px)', duration: 1.2, ease: 'expo.out' }
   );
 }
 
-// ----------------------------------------
-// 卵クリック：中央移動 → 割れるアニメーション
-// ----------------------------------------
+// ---------------------------
+// 抽選処理：卵クリックでアニメーション開始
+// ---------------------------
 let isAnimating = false;
 function selectRandomMember() {
   if (isAnimating) return;
@@ -163,40 +164,40 @@ function selectRandomMember() {
   }
 
   isAnimating = true;
-  let animationStarted = false; // 追加: アニメーション開始済みフラグ
+  let animationStarted = false; // アニメーション開始済みフラグ
 
-  // UI の非表示
-  document.getElementById('candidateList').style.display = 'none';
-  document.getElementById('newMemberInput').style.display = 'none';
-  document.getElementById('addMemberBtn').style.display = 'none';
-  document.getElementById('resetMemberListBtn').style.display = 'none';
-  document.getElementById('startSelectionBtn').style.display = 'none';
-  document.getElementById('mainHeading').style.display = 'none';
+  // UI非表示
+  candidateListEl.style.display = 'none';
+  newMemberInput.style.display = 'none';
+  addMemberBtn.style.display = 'none';
+  resetMemberListBtn.style.display = 'none';
+  startSelectionBtn.style.display = 'none';
+  mainHeading.style.display = 'none';
 
-  const eggContainer = document.getElementById('eggContainer');
   const egg = eggContainer.querySelector('svg');
   eggContainer.style.zIndex = "1000";
 
+  // ランダムに選ばれた候補
   const randomIndex = Math.floor(Math.random() * remainingMembers.length);
   const selectedMember = remainingMembers[randomIndex];
 
   const eggRect = eggContainer.getBoundingClientRect();
   const dx = window.innerWidth / 2 - (eggRect.left + eggRect.width / 2);
   const dy = window.innerHeight / 2 - (eggRect.top + eggRect.height / 2);
-
   const isAlreadyCentered = Math.abs(dx) < 2 && Math.abs(dy) < 2;
 
+  // アニメーション開始関数
   const startAnimation = () => {
-    if (animationStarted) return; // すでに開始済みなら何もしない
+    if (animationStarted) return;
     animationStarted = true;
     gsap.set(egg, { rotation: 0, scale: 1, opacity: 1 });
 
     animateEggSelection(egg, selectedMember, remainingMembers, (name, isFake) => {
       showSelectedMember(name, isFake);
-      document.getElementById('restartBtn').classList.remove('hidden');
+      restartBtn.classList.remove('hidden');
       setTimeout(() => {
         isAnimating = false;
-        animationStarted = false; // 次回のためにフラグをリセット
+        animationStarted = false;
       }, 1500);
     });
   };
@@ -212,7 +213,7 @@ function selectRandomMember() {
       onComplete: startAnimation
     });
 
-    // fallback タイマーもフラグで重複防止
+    // fallback：onComplete が実行されなかった場合に備える
     setTimeout(() => {
       if (!animationStarted) {
         console.warn('onComplete failed, fallback triggered');
@@ -222,70 +223,66 @@ function selectRandomMember() {
   }
 }
 
-document.getElementById('eggContainer').addEventListener('click', selectRandomMember);
+eggContainer.addEventListener('click', selectRandomMember);
 
-// ----------------------------------------
-// 候補リストリセットイベント
-// ----------------------------------------
+// ---------------------------
+// 候補リストリセット処理
+// ---------------------------
 function resetMemberList() {
   remainingMembers = [...initialMembers];
-  
-  const egg = document.getElementById('eggContainer');
-  animateResetEgg(egg);
-
+  animateResetEgg(eggContainer);
   updateCandidateList();
 }
 
-document.getElementById('resetMemberListBtn').addEventListener('click', resetMemberList);
+resetMemberListBtn.addEventListener('click', resetMemberList);
 
-// ----------------------------------------
-// Retry（やり直し）イベント：卵と操作エリアの復元
-// ----------------------------------------
+// ---------------------------
+// Retry（やり直し）処理：卵・UIの復元
+// ---------------------------
 function restartAnimation() {
-  const existing = document.getElementById('selectedMemberOverlay');
-  if (existing) existing.remove();
-
-  const eggContainer = document.getElementById('eggContainer');
-  const egg = eggContainer.querySelector('svg');
+  const existingOverlay = document.getElementById('selectedMemberOverlay');
+  if (existingOverlay) existingOverlay.remove();
 
   eggContainer.classList.remove('hidden');
   updateCandidateList();
-
-  // 🧠 抽選フラグをリセット！（←ここが重要！）
-  isAnimating = false;
+  isAnimating = false; // 抽選フラグリセット
 
   gsap.to(eggContainer, {
     x: 0,
     y: 0,
     duration: 0.5,
     ease: "power2.out",
-    onComplete: function () {
+    onComplete: () => {
+      const egg = eggContainer.querySelector('svg');
       animateResetEgg(egg);
       gsap.fromTo(egg, { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.out" });
 
-      // UI表示
-      document.getElementById('candidateList').style.display = '';
-      document.getElementById('newMemberInput').style.display = '';
-      document.getElementById('addMemberBtn').style.display = '';
-      document.getElementById('resetMemberListBtn').style.display = '';
-      document.getElementById('startSelectionBtn').style.display = '';
-      document.getElementById('mainHeading').style.display = '';
-      document.getElementById('restartBtn').classList.add('hidden');
+      // UI表示の復元
+      candidateListEl.style.display = '';
+      newMemberInput.style.display = '';
+      addMemberBtn.style.display = '';
+      resetMemberListBtn.style.display = '';
+      startSelectionBtn.style.display = '';
+      mainHeading.style.display = '';
+      restartBtn.classList.add('hidden');
       eggContainer.style.zIndex = "";
     }
   });
 }
 
-document.getElementById('newMemberInput').addEventListener('keydown', function(e) {
+restartBtn.addEventListener('click', restartAnimation);
+
+// ---------------------------
+// キーボード入力（Enterキー）で候補追加
+// ---------------------------
+newMemberInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
-    e.preventDefault(); // Enter キーのデフォルト動作をキャンセル
-    document.getElementById('addMemberBtn').click();
+    e.preventDefault();
+    addMemberBtn.click();
   }
 });
 
-document.getElementById('restartBtn').addEventListener('click', restartAnimation);
-
-// ----------------------------------------
-// 初回：候補リストを更新
-// ----------------------------------------
+// ---------------------------
+// 初期表示：候補リスト更新
+// ---------------------------
 updateCandidateList();
