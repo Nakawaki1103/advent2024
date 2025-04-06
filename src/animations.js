@@ -1,5 +1,46 @@
 // animations.js
 
+/**
+ * Helper: 落雷エフェクトを生成する関数
+ */
+function showLightningEffect() {
+  const lightning = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  lightning.setAttribute("width", "100");
+  lightning.setAttribute("height", "100");
+  lightning.setAttribute("viewBox", "0 0 100 100");
+
+  Object.assign(lightning.style, {
+    position: "fixed",
+    left: "50%",
+    top: "50%",
+    transform: "translate(-50%, -50%) scale(1.5)",
+    zIndex: "2000",
+    pointerEvents: "none"
+  });
+
+  lightning.innerHTML = `
+    <polygon points="50,10 40,55 55,55 45,90 80,45 60,45 70,10"
+      fill="#FFFF00" stroke="#FFD700" stroke-width="5" />
+  `;
+
+  document.body.appendChild(lightning);
+
+  gsap.fromTo(lightning,
+    { opacity: 1, scale: 0.8, rotation: -15 },
+    {
+      opacity: 0,
+      scale: 1.4,
+      rotation: 15,
+      duration: 0.4,
+      ease: "power2.out",
+      onComplete: () => lightning.remove()
+    }
+  );
+}
+
+/**
+ * Confetti（紙吹雪）を生成し、アニメーションさせる関数
+ */
 export function createConfetti() {
   const colors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'];
   const confettiContainer = document.getElementById('confetti');
@@ -29,7 +70,16 @@ export function createConfetti() {
   }
 }
 
+/**
+ * 卵アニメーション（抽選）の実行
+ *
+ * @param {HTMLElement} egg - 対象の卵要素
+ * @param {string} selectedMember - 抽選で選ばれた候補
+ * @param {Array<string>} allMembers - 全候補リスト
+ * @param {Function} onDisplayFinal - 最終結果表示のコールバック
+ */
 export function animateEggSelection(egg, selectedMember, allMembers, onDisplayFinal) {
+  // 特別な演出の確率判定
   const isSuperKakutei = Math.random() < (1 / 40);
   const isNormalKakutei = !isSuperKakutei && Math.random() < (1 / 20);
   const isReach = !isSuperKakutei && !isNormalKakutei && Math.random() < (1 / 40);
@@ -37,21 +87,24 @@ export function animateEggSelection(egg, selectedMember, allMembers, onDisplayFi
 
   const tl = gsap.timeline();
 
+  // リーチ演出
   if (isReach) {
     setTimeout(() => {
       const reach = document.createElement('div');
       reach.innerText = 'リーチ！！';
       reach.id = 'reachEffect';
-      reach.style.position = 'fixed';
-      reach.style.top = '50%';
-      reach.style.left = '50%';
-      reach.style.transform = 'translate(-50%, -50%)';
-      reach.style.fontSize = '6rem';
-      reach.style.fontWeight = 'bold';
-      reach.style.color = 'red';
-      reach.style.zIndex = '9999';
-      reach.style.pointerEvents = 'none';
-      reach.style.textShadow = '0 0 20px rgba(255,0,0,0.7)';
+      Object.assign(reach.style, {
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        fontSize: '6rem',
+        fontWeight: 'bold',
+        color: 'red',
+        zIndex: '9999',
+        pointerEvents: 'none',
+        textShadow: '0 0 20px rgba(255,0,0,0.7)'
+      });
       document.body.appendChild(reach);
 
       gsap.fromTo(reach,
@@ -74,6 +127,7 @@ export function animateEggSelection(egg, selectedMember, allMembers, onDisplayFi
     }, 100);
   }
 
+  // 通常or確定時の演出：卵シェイプの色変更、落雷、フラッシュ
   if (isNormalKakutei || isSuperKakutei) {
     const eggShape = document.querySelector('#eggShape');
     if (eggShape) {
@@ -92,14 +146,16 @@ export function animateEggSelection(egg, selectedMember, allMembers, onDisplayFi
     showLightningEffect();
 
     const flash = document.createElement('div');
-    flash.style.position = 'fixed';
-    flash.style.top = 0;
-    flash.style.left = 0;
-    flash.style.width = '100%';
-    flash.style.height = '100%';
-    flash.style.background = 'white';
-    flash.style.opacity = '0.9';
-    flash.style.zIndex = '9999';
+    Object.assign(flash.style, {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      background: 'white',
+      opacity: '0.9',
+      zIndex: '9999'
+    });
     document.body.appendChild(flash);
 
     gsap.to(flash, {
@@ -110,6 +166,7 @@ export function animateEggSelection(egg, selectedMember, allMembers, onDisplayFi
     });
   }
 
+  // 卵のアニメーションシーケンス
   tl.to(egg, {
       rotation: 5,
       duration: 0.1,
@@ -135,19 +192,14 @@ export function animateEggSelection(egg, selectedMember, allMembers, onDisplayFi
       gsap.set(egg, { opacity: 1, scale: 1 });
     })
     .call(() => {
+      // フェイク演出の場合は、まず偽の候補名を表示し、後で正しい名前に変更
       if (useFakeReveal && allMembers.length > 1) {
-        // フェイク表示の場合、他の候補から偽の名前を選択
-        let fake;
         const otherCandidates = allMembers.filter(name => name !== selectedMember);
-        if (otherCandidates.length > 0) {
-          fake = otherCandidates[Math.floor(Math.random() * otherCandidates.length)];
-        } else {
-          fake = selectedMember;
-        }
-        // 最初に偽の名前を表示
+        const fake = otherCandidates.length > 0 
+          ? otherCandidates[Math.floor(Math.random() * otherCandidates.length)]
+          : selectedMember;
         onDisplayFinal(`${fake} it is!`, true);
 
-        // 3秒後にアニメーションでテキストの変更を開始
         setTimeout(() => {
           const tempText = document.getElementById('selectedMemberOverlay');
           if (tempText) {
@@ -166,7 +218,6 @@ export function animateEggSelection(egg, selectedMember, allMembers, onDisplayFi
               }
             });
           }
-          // さらに5秒後に最終的な正しい名前を表示
           setTimeout(() => {
             onDisplayFinal(`${selectedMember} it is!`, false);
             createConfetti();
@@ -179,11 +230,21 @@ export function animateEggSelection(egg, selectedMember, allMembers, onDisplayFi
     }, null, "-=0.3");
 }
 
+/**
+ * 卵リセット時のアニメーション処理
+ *
+ * @param {HTMLElement} egg - 対象の卵要素
+ */
 export function animateResetEgg(egg) {
   egg.classList.remove('hidden');
   gsap.set(egg, { rotation: 0, scale: 1, opacity: 1 });
 }
 
+/**
+ * 卵エリアのホバー時アニメーション設定
+ *
+ * @param {HTMLElement} eggContainer - 卵エリアのコンテナ
+ */
 export function setupEggHoverAnimation(eggContainer) {
   eggContainer.addEventListener('mouseenter', () => {
     gsap.to(eggContainer, {
@@ -208,35 +269,3 @@ export function setupEggHoverAnimation(eggContainer) {
     });
   });
 }
-
-function showLightningEffect() {
-  const lightning = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  lightning.setAttribute("width", "100");
-  lightning.setAttribute("height", "100");
-  lightning.setAttribute("viewBox", "0 0 100 100");
-  lightning.style.position = "fixed";
-  lightning.style.left = "50%";
-  lightning.style.top = "50%";
-  lightning.style.transform = "translate(-50%, -50%) scale(1.5)";
-  lightning.style.zIndex = "2000";
-  lightning.style.pointerEvents = "none";
-  lightning.innerHTML = `
-    <polygon points="50,10 40,55 55,55 45,90 80,45 60,45 70,10"
-      fill="#FFFF00" stroke="#FFD700" stroke-width="5" />
-  `;
-
-  document.body.appendChild(lightning);
-
-  gsap.fromTo(lightning,
-    { opacity: 1, scale: 0.8, rotation: -15 },
-    {
-      opacity: 0,
-      scale: 1.4,
-      rotation: 15,
-      duration: 0.4,
-      ease: "power2.out",
-      onComplete: () => lightning.remove()
-    }
-  );
-}
-
